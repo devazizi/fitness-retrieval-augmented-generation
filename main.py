@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
-
+from time import time
 from pkg.vector.faiss import load_vector_db, create_vector_store, save_vector_db, retrieve_docs
 from pkg.text_processor.text_chunker import pre_process_document
 from pkg.openai.handler import OpenAIHandler
@@ -25,13 +25,38 @@ else:
     save_vector_db(vector_db, VECTOR_DB_PATH)
     print("Vector database created and saved!")
 
-def generate_response(message, history):
+async def generate_response(message, history):
+    response = ''
+
+    start = time.time()
+    
+    yield 'Processing.'
 
     context = retrieve_docs(message, vector_db, OpenAIHandler().create_embedding)
 
-    for data in GeminiHandler().retrival_content(context, message):
-        yield data
+    resolve_context = time.time() - start
 
+    yield 'Perparing data.'
+    
+    try:
+        yield 'Start generating.'
+        generationg_start = time.time()
+        # async for data in OpenAIHandler().text_generator(context_text=context, question_text=message):
+        #     response += data
+        #     yield response
+
+        async for data in GeminiHandler().retrival_content(context, message):
+            response += data
+            print(data)
+
+            yield response
+
+        response += f"\n proccessing time {resolve_context} \n" f"generationg response time {time.time() - generationg_start} \n"
+
+        yield response
+
+    except Exception as e:
+        yield f"Error: {e}"
 
 gr.ChatInterface(
     fn=generate_response,

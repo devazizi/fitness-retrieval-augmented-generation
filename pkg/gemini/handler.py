@@ -21,10 +21,9 @@ class GeminiHandler:
 
         return response.embeddings
 
-    def retrival_content(self, context_text: str, question_text: str):
-        text = ''
+    async def retrival_content(self, context_text: str, question_text: str):
         prompt = f'''
-            You are Health and Fitness AI assistant, Use the following context to answer the question. if question not about fitness, workout and health and relative context say question out of context, if you haven't enough information say so sorry i don't have enough information to answer the question.:
+            You are Health and Fitness AI assistant your name is Fitty, Use the following context to answer the question. if question not about fitness, workout and health and relative context say question out of context, if you haven't enough information say so sorry i don't have enough information to answer the question.:
 
         Context:
         {context_text}
@@ -32,12 +31,14 @@ class GeminiHandler:
         Question:
             {question_text}
         '''
-
         client = genai.Client(api_key=os.getenv('GEMINI_API_KEY'))
+    #    async for response in client.aio.models.generate_content_stream(
+    #             model='gemini-2.0-flash-exp',
+    #             contents=prompt
+    #     ):       
         for response in client.models.generate_content_stream(
                 model='gemini-2.0-flash-exp',
                 contents=prompt
         ):
-            text += response.text
-
-            yield text
+            yield response.text
+            
